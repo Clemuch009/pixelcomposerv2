@@ -1,5 +1,6 @@
 name = "maepixel-api"
 main = "worker.js"
+workers_dev = true 
 compatibility_date = "2026-05-16"
 
 [[d1_databases]]
