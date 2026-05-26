@@ -1,0 +1,9 @@
+name = "maepixel-api"
+main = "worker.js"
+compatibility_date = "2026-05-16"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pixelcomposer_db"
+database_id = "d13108f9-1f18-47ce-990f-e3320c825d55"
+
