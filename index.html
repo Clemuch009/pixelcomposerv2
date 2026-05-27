@@ -864,14 +864,64 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 
 /* Hide desktop UI on mobile */
 @media (max-width:767px) {
-  .topbar, .layout, .statusbar, .bottom-bar { display:none!important; }
+  .topbar, .layout, .statusbar, .bottom-bar, #wallpaperLibrary { display:none!important; }
   #mobileApp { display:flex!important; }
 }
 
 /* Hide mobile UI on desktop */
 #mobileApp { display:none; }
 
-/* ── Mobile app shell ─────────────────────────────────────── */
+/* ── Mobile wallpaper library ─────────────────────────────── */
+#mobLibrary{
+  flex-shrink:0;border-top:1px solid var(--border);
+  background:rgba(6,6,16,0.8);padding:10px 12px;
+  transition:all 0.3s ease;
+}
+#mobLibrary.mob-lib-collapsed{
+  max-height:120px;overflow:hidden;
+}
+.mob-lib-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+}
+.mob-lib-title{font-size:10px;color:var(--text);font-weight:700;letter-spacing:1px;}
+.mob-lib-sub{font-size:9px;color:var(--muted);}
+.mob-lib-presets{
+  display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;
+  scrollbar-width:none;
+}
+.mob-lib-presets::-webkit-scrollbar{display:none;}
+.mob-lib-preset{
+  flex-shrink:0;background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:6px;cursor:pointer;
+  display:flex;flex-direction:column;gap:5px;
+  transition:border-color 0.15s;
+}
+.mob-lib-preset:hover{border-color:rgba(124,58,237,0.5);}
+.mob-lib-preset-pair{display:flex;align-items:center;gap:4px;}
+.mob-lib-preset img{width:44px;height:30px;object-fit:cover;border-radius:4px;flex-shrink:0;}
+.mob-lib-preset-op{font-size:11px;color:var(--dim);}
+.mob-lib-preset-label{font-size:9px;color:var(--muted);text-align:center;}
+.mob-lib-preset-btn{
+  font-size:9px;font-weight:700;letter-spacing:0.5px;
+  background:rgba(124,58,237,0.25);border:1px solid rgba(124,58,237,0.4);
+  color:var(--text);padding:3px 6px;border-radius:5px;
+  cursor:pointer;font-family:var(--font);width:100%;
+}
+.mob-lib-grid{
+  display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;
+  scrollbar-width:none;margin-top:6px;
+}
+.mob-lib-grid::-webkit-scrollbar{display:none;}
+.mob-lib-grid-img{
+  width:56px;height:56px;object-fit:cover;flex-shrink:0;
+  border-radius:6px;border:2px solid transparent;cursor:pointer;
+  transition:all 0.15s;
+}
+.mob-lib-grid-img:hover{border-color:var(--accent2);}
+.mob-lib-grid-img.slot-a{border-color:var(--accent2);}
+.mob-lib-grid-img.slot-b{border-color:var(--accent);}
+.mob-lib-slot-ind{font-size:9px;color:var(--accent2);margin-top:4px;height:12px;}
 #mobileApp {
   flex-direction:column;
   width:100vw; height:100dvh;
@@ -1728,7 +1778,12 @@ async function loadShowcase() {
     let showLibrary=false;
     if(presets.length>0){renderPresets(presets);showLibrary=true;}
     if(library.length>0){renderLibrary(library);showLibrary=true;}
-    if(showLibrary)document.getElementById('wallpaperLibrary').style.display='block';
+    if(showLibrary){
+      const lib=document.getElementById('wallpaperLibrary');
+      if(lib){lib.classList.add('wl-horizontal');lib.style.display='block';}
+    }
+    // Mobile library
+    if(presets.length>0||library.length>0) renderMobLibrary(presets,library);
 
   }catch(e){
     const h=document.getElementById('heroSection');if(h)h.style.display='none';
@@ -1823,6 +1878,80 @@ function loadLibraryImage(url, imgEl){
     const target=document.getElementById('dropA');
     if(target)target.scrollIntoView({behavior:'smooth',block:'center'});
   },400);
+}
+
+// ── Mobile library render ─────────────────────────────────────
+function renderMobLibrary(presets, library){
+  const lib=document.getElementById('mobLibrary');
+  if(!lib)return;
+
+  // Presets
+  if(presets.length>0){
+    const wrap=document.getElementById('mobLibPresetsWrap');
+    const grid=document.getElementById('mobLibPresets');
+    if(wrap&&grid){
+      grid.innerHTML='';
+      presets.slice(0,6).forEach(item=>{
+        const card=document.createElement('div');
+        card.className='mob-lib-preset';
+        card.innerHTML=`
+          <div class="mob-lib-preset-pair">
+            <img src="${item.img_a_url}" alt="A" onerror="this.closest('.mob-lib-preset').remove()">
+            <span class="mob-lib-preset-op">+</span>
+            <img src="${item.img_b_url}" alt="B" onerror="this.closest('.mob-lib-preset').remove()">
+          </div>
+          ${item.label?`<div class="mob-lib-preset-label">${item.label}</div>`:''}
+          <button class="mob-lib-preset-btn">▶ Try</button>
+        `;
+        card.querySelector('.mob-lib-preset-btn').onclick=()=>{
+          loadSampleImage(item.img_a_url,'A');
+          loadSampleImage(item.img_b_url,'B');
+          track('preset_loaded',{label:item.label||'unknown',source:'mobile'});
+          // Collapse library after selection
+          lib.classList.add('mob-lib-collapsed');
+        };
+        grid.appendChild(card);
+      });
+      wrap.style.display='block';
+    }
+  }
+
+  // Individual library images
+  if(library.length>0){
+    const wrap=document.getElementById('mobLibGridWrap');
+    const grid=document.getElementById('mobLibGrid');
+    if(wrap&&grid){
+      grid.innerHTML='';
+      library.slice(0,12).forEach(item=>{
+        const img=document.createElement('img');
+        img.src=item.img_url;
+        img.className='mob-lib-grid-img';
+        img.alt=item.label||'wallpaper';
+        img.onerror=()=>img.remove();
+        img.onclick=()=>{
+          // Smart slot fill
+          let slot;
+          if(!S.imgA)      slot='A';
+          else if(!S.imgB) slot='B';
+          else             slot='A';
+          // Highlight
+          document.querySelectorAll('.mob-lib-grid-img').forEach(el=>el.classList.remove('slot-a','slot-b'));
+          img.classList.add(slot==='A'?'slot-a':'slot-b');
+          // Indicator
+          const ind=document.getElementById('mobLibSlotInd');
+          if(ind)ind.textContent=`✓ Image ${slot} loaded`;
+          loadSampleImage(item.img_url,slot);
+          track('library_image_loaded',{slot,url:item.img_url.slice(0,80),source:'mobile'});
+          // Collapse after both slots filled
+          if(S.imgA&&S.imgB) lib.classList.add('mob-lib-collapsed');
+        };
+        grid.appendChild(img);
+      });
+      wrap.style.display='block';
+    }
+  }
+
+  lib.style.display='block';
 }
 
 function renderHero(items){
@@ -2438,6 +2567,21 @@ async function shareOutput(){
     </div>
 
   </div><!-- /mobileCanvas -->
+
+  <!-- Mobile wallpaper library -->
+  <div id="mobLibrary" style="display:none;">
+    <div class="mob-lib-header">
+      <span class="mob-lib-title">Need wallpapers?</span>
+      <span class="mob-lib-sub">tap to load instantly</span>
+    </div>
+    <div id="mobLibPresetsWrap" style="display:none;">
+      <div class="mob-lib-presets" id="mobLibPresets"></div>
+    </div>
+    <div id="mobLibGridWrap" style="display:none;">
+      <div class="mob-lib-grid" id="mobLibGrid"></div>
+      <div class="mob-lib-slot-ind" id="mobLibSlotInd"></div>
+    </div>
+  </div>
 
   <!-- Bottom nav -->
   <div id="mobileBottomNav">
