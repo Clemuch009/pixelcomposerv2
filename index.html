@@ -488,7 +488,31 @@ input[type=range]{width:100%;accent-color:var(--accent2);cursor:pointer;}
 #wallpaperLibrary{
   padding:20px;border-top:1px solid var(--border);
   background:rgba(6,6,16,0.6);backdrop-filter:var(--glass);
-  flex-shrink:0;
+  flex-shrink:0;transition:max-height 0.4s ease;
+}
+/* Fresh state — horizontal scrolling */
+#wallpaperLibrary.wl-horizontal .wl-grid{
+  display:flex;flex-direction:row;flex-wrap:nowrap;
+  overflow-x:auto;gap:8px;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+#wallpaperLibrary.wl-horizontal .wl-grid-img{
+  width:90px;height:90px;flex-shrink:0;aspect-ratio:1;
+}
+#wallpaperLibrary.wl-horizontal .wl-presets{
+  flex-wrap:nowrap;overflow-x:auto;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+/* Active state — vertical fixed grid, capped height */
+#wallpaperLibrary.wl-vertical{
+  max-height:280px;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+#wallpaperLibrary.wl-vertical .wl-grid{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:8px;
+}
+#wallpaperLibrary.wl-vertical .wl-grid-img{
+  width:100%;aspect-ratio:1;
 }
 .wl-header{
   display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
@@ -543,11 +567,8 @@ input[type=range]{width:100%;accent-color:var(--accent2);cursor:pointer;}
 }
 .wl-preset-btn:hover{background:linear-gradient(135deg,rgba(124,58,237,0.5),rgba(255,85,51,0.3));}
 
-/* Library grid */
-.wl-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
-  gap:8px;
-}
+/* Library grid — layout controlled by wl-horizontal/wl-vertical */
+.wl-grid{gap:8px;}
 .wl-grid-img{
   width:100%;aspect-ratio:1;object-fit:cover;
   border-radius:8px;border:2px solid transparent;
@@ -868,24 +889,19 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
   #mobileApp { display:flex!important; }
 }
 
-/* Hide mobile UI on desktop */
-#mobileApp { display:none; }
-
 /* ── Mobile wallpaper library ─────────────────────────────── */
 #mobLibrary{
   flex-shrink:0;border-top:1px solid var(--border);
   background:rgba(6,6,16,0.8);padding:10px 12px;
-  transition:all 0.3s ease;
 }
-#mobLibrary.mob-lib-collapsed{
-  max-height:120px;overflow:hidden;
-}
-.mob-lib-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:8px;
-}
+#mobLibrary.mob-lib-collapsed{max-height:0;overflow:hidden;padding:0;}
+.mob-lib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .mob-lib-title{font-size:10px;color:var(--text);font-weight:700;letter-spacing:1px;}
 .mob-lib-sub{font-size:9px;color:var(--muted);}
+.mob-lib-section-label{
+  font-size:9px;color:var(--accent2);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:6px;
+}
 .mob-lib-presets{
   display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;
   scrollbar-width:none;
@@ -894,16 +910,14 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 .mob-lib-preset{
   flex-shrink:0;background:var(--card);border:1px solid var(--border);
   border-radius:8px;padding:6px;cursor:pointer;
-  display:flex;flex-direction:column;gap:5px;
-  transition:border-color 0.15s;
+  display:flex;flex-direction:column;gap:5px;min-width:120px;
 }
-.mob-lib-preset:hover{border-color:rgba(124,58,237,0.5);}
 .mob-lib-preset-pair{display:flex;align-items:center;gap:4px;}
 .mob-lib-preset img{width:44px;height:30px;object-fit:cover;border-radius:4px;flex-shrink:0;}
 .mob-lib-preset-op{font-size:11px;color:var(--dim);}
 .mob-lib-preset-label{font-size:9px;color:var(--muted);text-align:center;}
 .mob-lib-preset-btn{
-  font-size:9px;font-weight:700;letter-spacing:0.5px;
+  font-size:9px;font-weight:700;
   background:rgba(124,58,237,0.25);border:1px solid rgba(124,58,237,0.4);
   color:var(--text);padding:3px 6px;border-radius:5px;
   cursor:pointer;font-family:var(--font);width:100%;
@@ -915,13 +929,16 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 .mob-lib-grid::-webkit-scrollbar{display:none;}
 .mob-lib-grid-img{
   width:56px;height:56px;object-fit:cover;flex-shrink:0;
-  border-radius:6px;border:2px solid transparent;cursor:pointer;
-  transition:all 0.15s;
+  border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all 0.15s;
 }
-.mob-lib-grid-img:hover{border-color:var(--accent2);}
 .mob-lib-grid-img.slot-a{border-color:var(--accent2);}
 .mob-lib-grid-img.slot-b{border-color:var(--accent);}
-.mob-lib-slot-ind{font-size:9px;color:var(--accent2);margin-top:4px;height:12px;}
+.mob-lib-slot-ind{font-size:9px;color:var(--accent2);margin-top:4px;min-height:12px;}
+
+/* Hide mobile UI on desktop */
+#mobileApp { display:none; }
+
+/* ── Mobile app shell ─────────────────────────────────────── */
 #mobileApp {
   flex-direction:column;
   width:100vw; height:100dvh;
@@ -1880,12 +1897,22 @@ function loadLibraryImage(url, imgEl){
   },400);
 }
 
+// ── Desktop library collapse — one-way, fires on first image load ─
+let _libraryCollapsed=false;
+function collapseLibrary(){
+  if(_libraryCollapsed)return;
+  _libraryCollapsed=true;
+  const lib=document.getElementById('wallpaperLibrary');
+  if(!lib)return;
+  lib.classList.remove('wl-horizontal');
+  lib.classList.add('wl-vertical');
+}
+
 // ── Mobile library render ─────────────────────────────────────
-function renderMobLibrary(presets, library){
+function renderMobLibrary(presets,library){
   const lib=document.getElementById('mobLibrary');
   if(!lib)return;
 
-  // Presets
   if(presets.length>0){
     const wrap=document.getElementById('mobLibPresetsWrap');
     const grid=document.getElementById('mobLibPresets');
@@ -1904,10 +1931,9 @@ function renderMobLibrary(presets, library){
           <button class="mob-lib-preset-btn">▶ Try</button>
         `;
         card.querySelector('.mob-lib-preset-btn').onclick=()=>{
-          loadSampleImage(item.img_a_url,'A');
-          loadSampleImage(item.img_b_url,'B');
+          mobLoadSampleImage(item.img_a_url,'A');
+          mobLoadSampleImage(item.img_b_url,'B');
           track('preset_loaded',{label:item.label||'unknown',source:'mobile'});
-          // Collapse library after selection
           lib.classList.add('mob-lib-collapsed');
         };
         grid.appendChild(card);
@@ -1916,7 +1942,6 @@ function renderMobLibrary(presets, library){
     }
   }
 
-  // Individual library images
   if(library.length>0){
     const wrap=document.getElementById('mobLibGridWrap');
     const grid=document.getElementById('mobLibGrid');
@@ -1929,21 +1954,17 @@ function renderMobLibrary(presets, library){
         img.alt=item.label||'wallpaper';
         img.onerror=()=>img.remove();
         img.onclick=()=>{
-          // Smart slot fill
           let slot;
-          if(!S.imgA)      slot='A';
-          else if(!S.imgB) slot='B';
-          else             slot='A';
-          // Highlight
+          if(!MOB.imgA)      slot='A';
+          else if(!MOB.imgB) slot='B';
+          else               slot='A';
           document.querySelectorAll('.mob-lib-grid-img').forEach(el=>el.classList.remove('slot-a','slot-b'));
           img.classList.add(slot==='A'?'slot-a':'slot-b');
-          // Indicator
           const ind=document.getElementById('mobLibSlotInd');
           if(ind)ind.textContent=`✓ Image ${slot} loaded`;
-          loadSampleImage(item.img_url,slot);
+          mobLoadSampleImage(item.img_url,slot);
           track('library_image_loaded',{slot,url:item.img_url.slice(0,80),source:'mobile'});
-          // Collapse after both slots filled
-          if(S.imgA&&S.imgB) lib.classList.add('mob-lib-collapsed');
+          if(MOB.imgA&&MOB.imgB) lib.classList.add('mob-lib-collapsed');
         };
         grid.appendChild(img);
       });
@@ -1954,7 +1975,7 @@ function renderMobLibrary(presets, library){
   lib.style.display='block';
 }
 
-function renderHero(items){
+
   const hero=document.getElementById('heroSection');
   const grid=document.getElementById('heroGrid');
   if(!grid)return;
@@ -2007,6 +2028,7 @@ function loadFromFile(file,slot){
       off.getContext('2d').drawImage(img,0,0);
       const data=off.getContext('2d').getImageData(0,0,off.width,off.height);
       if(slot==='A')S.imgA=data;else S.imgB=data;
+      collapseLibrary();
       const imgType=classifyImageType(data);
       track('image_upload',{slot,img_type:imgType});
       updateBottomThumb(slot,img);
@@ -2571,13 +2593,15 @@ async function shareOutput(){
   <!-- Mobile wallpaper library -->
   <div id="mobLibrary" style="display:none;">
     <div class="mob-lib-header">
-      <span class="mob-lib-title">Need wallpapers?</span>
+      <span class="mob-lib-title">Need wallpapers to try?</span>
       <span class="mob-lib-sub">tap to load instantly</span>
     </div>
     <div id="mobLibPresetsWrap" style="display:none;">
+      <div class="mob-lib-section-label">Quick Experiments — tap to load instantly</div>
       <div class="mob-lib-presets" id="mobLibPresets"></div>
     </div>
     <div id="mobLibGridWrap" style="display:none;">
+      <div class="mob-lib-section-label">Wallpaper Library — tap to fill a slot</div>
       <div class="mob-lib-grid" id="mobLibGrid"></div>
       <div class="mob-lib-slot-ind" id="mobLibSlotInd"></div>
     </div>
@@ -2778,6 +2802,20 @@ function mobLoadFile(file, slot){
   reader.readAsDataURL(file);
 }
 
+// ── Mobile sample loader — fetches URL and loads into MOB state ──
+async function mobLoadSampleImage(url, slot){
+  try{
+    document.getElementById('mobStatusMsg').textContent = `Loading image ${slot}…`;
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const file = new File([blob], 'sample.jpg', {type: blob.type});
+    mobLoadFile(file, slot);
+    track('sample_loaded', {slot, url: url.slice(0,80), source:'mobile'});
+  }catch(e){
+    document.getElementById('mobStatusMsg').textContent = 'Failed to load image';
+  }
+}
+
 function mobDrawThumb(slot, img){
   const canvasId = slot==='A'?'mobThumbA':'mobThumbB';
   const cardId = slot==='A'?'mobUzA':'mobUzB';
@@ -2864,7 +2902,7 @@ function mobCompose(){
   const normB = offB.getContext('2d').getImageData(0,0,procW,procH).data;
 
   if(MOB.worker){ MOB.worker.terminate(); MOB.worker=null; }
-  MOB.worker = getWorker();
+  MOB.worker = createWorker();
   MOB.w = procW; MOB.h = procH;
 
   MOB.worker.onmessage = msg=>{
