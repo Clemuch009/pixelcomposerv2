@@ -1809,7 +1809,7 @@ async function loadShowcase() {
     if(library.length>0){renderLibrary(library);showLibrary=true;}
     if(showLibrary){
       const lib=document.getElementById('wallpaperLibrary');
-      if(lib){lib.classList.add('wl-horizontal');lib.style.display='block';}
+      if(lib&&window.innerWidth>767){lib.classList.add('wl-horizontal');lib.style.display='block';}
     }
     // Mobile library
     if(presets.length>0||library.length>0) renderMobLibrary(presets,library);
