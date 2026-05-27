@@ -178,6 +178,7 @@ input[type=range]{width:100%;accent-color:var(--accent2);cursor:pointer;}
   flex:1;
   position:relative;
   min-height:0;
+  overflow:hidden;
 }
 .input-card{
   background:var(--card);backdrop-filter:var(--glass);
@@ -954,7 +955,7 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
   background:rgba(6,6,16,0.0);
   border-bottom:none;
   display:flex; align-items:center;
-  justify-content:flex-end;
+  justify-content:space-between;
   padding:0 14px; z-index:50;
   position:absolute; top:0; left:0; right:0;
   transition:all 0.3s ease;
@@ -963,6 +964,14 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
   height:0; padding:0; overflow:hidden;
   border:none;
 }
+#mobBackBtn{
+  background:rgba(255,255,255,0.08);border:1px solid var(--border);
+  color:var(--muted);padding:4px 10px;border-radius:16px;
+  font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font);
+  display:none;transition:all 0.15s;
+}
+#mobBackBtn:hover{background:rgba(255,255,255,0.15);color:var(--text);}
+#mobBackBtn.visible{display:block;}
 #mobileLogoM {
   font-weight:900; font-size:13px; letter-spacing:3px;
   background:linear-gradient(135deg,#fff 40%,#7C3AED);
@@ -1860,6 +1869,7 @@ function renderLibrary(items){
 function loadPresetPair(item){
   loadSampleImage(item.img_a_url,'A');
   loadSampleImage(item.img_b_url,'B');
+  collapseLibrary();
   track('preset_loaded',{label:item.label||'unknown'});
   // Smooth partial scroll up — workspace visible without full jump
   setTimeout(()=>{
@@ -1934,7 +1944,7 @@ function renderMobLibrary(presets,library){
           mobLoadSampleImage(item.img_a_url,'A');
           mobLoadSampleImage(item.img_b_url,'B');
           track('preset_loaded',{label:item.label||'unknown',source:'mobile'});
-          lib.classList.add('mob-lib-collapsed');
+          // Don't collapse — user can still see library to swap images
         };
         grid.appendChild(card);
       });
@@ -1964,7 +1974,7 @@ function renderMobLibrary(presets,library){
           if(ind)ind.textContent=`✓ Image ${slot} loaded`;
           mobLoadSampleImage(item.img_url,slot);
           track('library_image_loaded',{slot,url:item.img_url.slice(0,80),source:'mobile'});
-          if(MOB.imgA&&MOB.imgB) lib.classList.add('mob-lib-collapsed');
+          // Stay visible — user may want to pick another image
         };
         grid.appendChild(img);
       });
@@ -2528,6 +2538,7 @@ async function shareOutput(){
 
   <!-- Top bar -->
   <div id="mobileTopBar">
+    <button id="mobBackBtn" onclick="mobGoHome()">← home</button>
     <button id="mobileFeedbackM" onclick="openFeedback()">⭐ feedback</button>
   </div>
 
@@ -2721,6 +2732,24 @@ let mobCurrentPanel = null;
 function mobIsMobile(){ return window.innerWidth <= 767; }
 
 // ── Nav taps ─────────────────────────────────────────────────
+// ── Mobile go home — resets to welcome state ──────────────────
+function mobGoHome(){
+  // Hide upload area
+  document.getElementById('mobileUploadArea')?.classList.remove('visible');
+  // Unblur background
+  document.getElementById('mobileBgLayer')?.classList.remove('blurred');
+  // Hide user layer
+  document.getElementById('mobileUserLayer')?.classList.remove('visible');
+  // Hide back button
+  document.getElementById('mobBackBtn')?.classList.remove('visible');
+  // Reset nav to create
+  ['Create','Controls','Resolution','History'].forEach(t=>{
+    document.getElementById('mobNav'+t)?.classList.remove('active');
+  });
+  document.getElementById('mobNavCreate')?.classList.add('active');
+  mobClosePanel();
+}
+
 function mobNavTap(tab){
   if(!mobIsMobile()) return;
   // deactivate all
@@ -2737,14 +2766,17 @@ function mobNavTap(tab){
     ua.classList.toggle('visible', !visible);
     const bg = document.getElementById('mobileBgLayer');
     const ul = document.getElementById('mobileUserLayer');
+    const backBtn = document.getElementById('mobBackBtn');
     if(!visible){
       bg.classList.add('blurred');
+      if(backBtn) backBtn.classList.add('visible');
       // userLayer only shows after images actually loaded
     } else {
       if(!MOB.imgA && !MOB.imgB){
         bg.classList.remove('blurred');
         ul.classList.remove('visible');
       }
+      if(backBtn) backBtn.classList.remove('visible');
     }
     // topbar stays visible (feedback button only)
   } else {
