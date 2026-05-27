@@ -1,12 +1,18 @@
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, PATCH, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key',
-};
+function getCors(request) {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = ['https://maepixel.pages.dev', 'http://localhost:8790', 'http://127.0.0.1:8790'];
+  const allowOrigin = allowed.includes(origin) ? origin : allowed[0];
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key',
+    'Access-Control-Allow-Credentials': 'false',
+  };
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
-    status, headers: { ...CORS, 'Content-Type': 'application/json' },
+    status, headers: { ...getCors(request), 'Content-Type': 'application/json' },
   });
 }
 function err(msg, status = 400) { return json({ ok: false, error: msg }, status); }
@@ -17,7 +23,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS });
+      return new Response(null, { status: 204, headers: getCors(request) });
     }
 
     // ── POST /track ───────────────────────────────────────────────
