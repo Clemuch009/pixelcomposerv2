@@ -894,7 +894,6 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 #mobLibrary{
   flex-shrink:0;border-top:1px solid var(--border);
   background:rgba(6,6,16,0.8);padding:10px 12px;
-  max-height:200px;overflow-y:auto;
 }
 #mobLibrary.mob-lib-collapsed{max-height:0;overflow:hidden;padding:0;}
 .mob-lib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -905,20 +904,19 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
   text-transform:uppercase;margin-bottom:6px;
 }
 .mob-lib-presets{
-  display:flex;flex-direction:row;flex-wrap:nowrap;
-  gap:8px;overflow-x:auto;padding-bottom:4px;
+  display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;
   scrollbar-width:none;
 }
 .mob-lib-presets::-webkit-scrollbar{display:none;}
 .mob-lib-preset{
   flex-shrink:0;background:var(--card);border:1px solid var(--border);
   border-radius:8px;padding:6px;cursor:pointer;
-  display:flex;flex-direction:column;gap:5px;width:110px;
+  display:flex;flex-direction:column;gap:5px;min-width:120px;
 }
-.mob-lib-preset-pair{display:flex;align-items:center;gap:3px;}
-.mob-lib-preset img{width:38px;height:26px;object-fit:cover;border-radius:4px;flex-shrink:0;}
-.mob-lib-preset-op{font-size:10px;color:var(--dim);flex-shrink:0;}
-.mob-lib-preset-label{font-size:9px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mob-lib-preset-pair{display:flex;align-items:center;gap:4px;}
+.mob-lib-preset img{width:44px;height:30px;object-fit:cover;border-radius:4px;flex-shrink:0;}
+.mob-lib-preset-op{font-size:11px;color:var(--dim);}
+.mob-lib-preset-label{font-size:9px;color:var(--muted);text-align:center;}
 .mob-lib-preset-btn{
   font-size:9px;font-weight:700;
   background:rgba(124,58,237,0.25);border:1px solid rgba(124,58,237,0.4);
@@ -1119,10 +1117,20 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 }
 .mob-loading.active { display:flex; }
 .mob-download-actions {
-  position:absolute; bottom:10px; right:10px;
   display:none; gap:6px; z-index:6;
 }
 .mob-output-card.has-output .mob-download-actions { display:flex; }
+
+/* Save/Share bar — floats above Image B, always visible after blend */
+.mob-output-actions {
+  display:none;
+  position:absolute;
+  bottom:164px;
+  right:12px;
+  gap:8px;
+  z-index:30;
+}
+.mob-output-actions.visible { display:flex; }
 .mob-dl-btn {
   background:rgba(0,0,0,0.8); border:1px solid rgba(255,85,51,0.6);
   color:#fff; padding:8px 14px; border-radius:8px;
@@ -1436,6 +1444,25 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
         </div>
       </div>
 
+      <!-- TRY THESE accordion — expanded by default -->
+      <div class="accordion-item" id="accordionTryThese" style="display:none;">
+        <button class="accordion-hdr" onclick="toggleAccordion('tryThese')">
+          <strong>TRY THESE</strong>
+          <span class="accordion-arrow" id="arrowTryThese">▴</span>
+        </button>
+        <div class="accordion-body" id="bodyTryThese" style="display:block;">
+          <div id="panelPresetsWrap" style="display:none;">
+            <div class="sec-label" style="margin-bottom:6px;">QUICK EXPERIMENTS</div>
+            <div id="panelPresets" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+          <div id="panelGridWrap" style="display:none;margin-top:8px;">
+            <div class="sec-label" style="margin-bottom:6px;">WALLPAPER LIBRARY</div>
+            <div id="panelSlotIndicator" style="font-size:9px;color:var(--accent2);min-height:12px;margin-bottom:4px;"></div>
+            <div id="panelGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1524,27 +1551,6 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
   </div>
 </div>
 
-<!-- WALLPAPER LIBRARY — below fold, does not modify workspace above -->
-<div id="wallpaperLibrary" style="display:none;">
-  <div class="wl-header">
-    <span class="wl-title">Need wallpapers to try?</span>
-    <span class="wl-sub">Pick a pair instantly or experiment below</span>
-  </div>
-
-  <!-- Quick Experiments — preset pairs -->
-  <div id="wlPresetsWrap" style="display:none;">
-    <div class="wl-section-label">Quick Experiments — click to load instantly</div>
-    <div class="wl-presets" id="wlPresets"></div>
-  </div>
-
-  <!-- Wallpaper Library — individual images -->
-  <div id="wlGridWrap" style="display:none;">
-    <div class="wl-section-label">Wallpaper Library — click to fill a slot</div>
-    <div class="wl-slot-indicator" id="wlSlotIndicator"></div>
-    <div class="wl-grid" id="wlGrid"></div>
-  </div>
-</div>
-
 <!-- BOTTOM BAR — inputs + blend button -->
 <div class="bottom-bar">
   <!-- Upload A zone -->
@@ -1613,8 +1619,9 @@ function toggleAccordion(name){
   const arrow=document.getElementById('arrow'+name.charAt(0).toUpperCase()+name.slice(1));
   if(!body)return;
   const open=body.style.display==='none';
-  body.style.display=open?'flex':'none';
-  if(arrow)arrow.style.transform=open?'rotate(0deg)':'rotate(-90deg)';
+  // tryThese uses block, others use flex
+  body.style.display=open?(name==='tryThese'?'block':'flex'):'none';
+  if(arrow)arrow.textContent=open?'▴':'▾';
 }
 
 // ── Panel tab switching ───────────────────────────────────────
@@ -1793,11 +1800,11 @@ async function loadShowcase() {
     const data=await res.json();
     if(!data.ok)return;
 
-    const heroItems   = data.items.filter(i=>i.type==='hero');
-    const samplesA    = data.items.filter(i=>i.type==='sample_a');
-    const samplesB    = data.items.filter(i=>i.type==='sample_b');
-    const presets     = data.items.filter(i=>i.type==='preset');
-    const library     = data.items.filter(i=>i.type==='library');
+    const heroItems = data.items.filter(i=>i.type==='hero');
+    const samplesA  = data.items.filter(i=>i.type==='sample_a');
+    const samplesB  = data.items.filter(i=>i.type==='sample_b');
+    const presets   = data.items.filter(i=>i.type==='preset');
+    const library   = data.items.filter(i=>i.type==='library');
 
     if(heroItems.length>0)renderHero(heroItems);
     else{const h=document.getElementById('heroSection');if(h)h.style.display='none';}
@@ -1805,13 +1812,12 @@ async function loadShowcase() {
     if(samplesA.length>0||samplesB.length>0)renderSamples(samplesA,samplesB);
     else{const s=document.getElementById('samplesBar');if(s)s.style.display='none';}
 
-    // New: preset pairs + library grid
-    let showLibrary=false;
-    if(presets.length>0){renderPresets(presets);showLibrary=true;}
-    if(library.length>0){renderLibrary(library);showLibrary=true;}
-    if(showLibrary){
-      const lib=document.getElementById('wallpaperLibrary');
-      if(lib){lib.classList.add('wl-horizontal');lib.style.display='block';}
+    // Render into panel accordion
+    let showPanel=false;
+    if(presets.length>0){renderPresets(presets);showPanel=true;}
+    if(library.length>0){renderLibrary(library);showPanel=true;}
+    if(showPanel){
+      document.getElementById('accordionTryThese').style.display='block';
     }
     // Mobile library
     if(presets.length>0||library.length>0) renderMobLibrary(presets,library);
@@ -1822,105 +1828,81 @@ async function loadShowcase() {
   }
 }
 
-// ── Render preset pairs ───────────────────────────────────────
+// ── Render preset pairs into panel ────────────────────────────
 function renderPresets(items){
-  const wrap=document.getElementById('wlPresetsWrap');
-  const grid=document.getElementById('wlPresets');
+  const wrap=document.getElementById('panelPresetsWrap');
+  const grid=document.getElementById('panelPresets');
   if(!wrap||!grid)return;
   grid.innerHTML='';
   items.slice(0,6).forEach(item=>{
     const card=document.createElement('div');
-    card.className='wl-preset-card';
+    card.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color 0.15s;';
+    card.onmouseenter=()=>card.style.borderColor='rgba(124,58,237,0.5)';
+    card.onmouseleave=()=>card.style.borderColor='var(--border)';
     card.innerHTML=`
-      <div class="wl-preset-pair">
-        <img src="${item.img_a_url}" class="wl-preset-img" alt="A"
-          onerror="this.closest('.wl-preset-card').remove()">
-        <span class="wl-preset-op">+</span>
-        <img src="${item.img_b_url}" class="wl-preset-img" alt="B"
-          onerror="this.closest('.wl-preset-card').remove()">
-        ${item.output_url?`<span class="wl-preset-op eq">=</span>
-        <img src="${item.output_url}" class="wl-preset-img wl-preset-output" alt="output"
-          onerror="this.style.display='none'">`:'' }
-      </div>
-      ${item.label?`<div class="wl-preset-label">${item.label}</div>`:''}
-      <button class="wl-preset-btn">▶ Try this pair</button>
+      <img src="${item.img_a_url}" style="width:36px;height:24px;object-fit:cover;border-radius:4px;flex-shrink:0;"
+        onerror="this.closest('div').remove()">
+      <span style="font-size:11px;color:var(--dim);">+</span>
+      <img src="${item.img_b_url}" style="width:36px;height:24px;object-fit:cover;border-radius:4px;flex-shrink:0;"
+        onerror="this.closest('div').remove()">
+      <span style="font-size:10px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.label||''}</span>
+      <button style="font-size:9px;font-weight:700;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);color:var(--text);padding:3px 8px;border-radius:5px;cursor:pointer;font-family:var(--font);flex-shrink:0;">Try</button>
     `;
-    card.querySelector('.wl-preset-btn').onclick=()=>loadPresetPair(item);
+    card.querySelector('button').onclick=(e)=>{e.stopPropagation();loadPresetPair(item);};
     grid.appendChild(card);
   });
   wrap.style.display='block';
 }
 
-// ── Render library grid ───────────────────────────────────────
+// ── Render library grid into panel ────────────────────────────
 function renderLibrary(items){
-  const wrap=document.getElementById('wlGridWrap');
-  const grid=document.getElementById('wlGrid');
+  const wrap=document.getElementById('panelGridWrap');
+  const grid=document.getElementById('panelGrid');
   if(!wrap||!grid)return;
   grid.innerHTML='';
   items.slice(0,12).forEach(item=>{
     const img=document.createElement('img');
     img.src=item.img_url;
-    img.className='wl-grid-img';
+    img.style.cssText='width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all 0.15s;display:block;';
     img.alt=item.label||'wallpaper';
     img.title=(item.label||'wallpaper')+' — click to load';
     img.onerror=()=>img.remove();
+    img.onmouseenter=()=>img.style.borderColor='var(--accent2)';
+    img.onmouseleave=()=>{if(!img.classList.contains('slot-a')&&!img.classList.contains('slot-b'))img.style.borderColor='transparent';};
     img.onclick=()=>loadLibraryImage(item.img_url, img);
     grid.appendChild(img);
   });
   wrap.style.display='block';
 }
 
-// ── Load preset pair — loads both A and B then scrolls up ─────
+// ── Load preset pair ──────────────────────────────────────────
 function loadPresetPair(item){
   loadSampleImage(item.img_a_url,'A');
   loadSampleImage(item.img_b_url,'B');
-  collapseLibrary();
   track('preset_loaded',{label:item.label||'unknown'});
-  // Smooth partial scroll up — workspace visible without full jump
-  setTimeout(()=>{
-    const target=document.getElementById('inputCards')||document.getElementById('outputCard');
-    if(target)target.scrollIntoView({behavior:'smooth',block:'center'});
-  },300);
 }
 
 // ── Load library image — smart slot fill ──────────────────────
-// C: fill empty slot first, replace A if both full
 function loadLibraryImage(url, imgEl){
-  // Determine slot: fill A if empty, B if A full, replace A if both full
   let slot;
   if(!S.imgA)      slot='A';
   else if(!S.imgB) slot='B';
   else             slot='A';
 
-  // Update grid highlight
-  document.querySelectorAll('.wl-grid-img').forEach(el=>{
-    el.classList.remove('slot-a','slot-b','just-loaded');
+  // Update highlight
+  document.querySelectorAll('#panelGrid img').forEach(el=>{
+    el.style.borderColor='transparent';
+    el.classList.remove('slot-a','slot-b');
   });
-  imgEl.classList.add(slot==='A'?'slot-a':'slot-b','just-loaded');
+  imgEl.style.borderColor=slot==='A'?'var(--accent2)':'var(--accent)';
+  imgEl.classList.add(slot==='A'?'slot-a':'slot-b');
 
-  // Update slot indicator
-  const ind=document.getElementById('wlSlotIndicator');
+  // Update indicator
+  const ind=document.getElementById('panelSlotIndicator');
   if(ind)ind.textContent=`✓ Loaded into Image ${slot}`;
 
   loadSampleImage(url, slot);
   track('library_image_loaded',{slot,url:url.slice(0,80)});
-
-  // Smooth partial scroll up after short delay
-  setTimeout(()=>{
-    const target=document.getElementById('dropA');
-    if(target)target.scrollIntoView({behavior:'smooth',block:'center'});
-  },400);
-}
-
-// ── Desktop library collapse — one-way, fires on first image load ─
-let _libraryCollapsed=false;
-function collapseLibrary(){
-  if(_libraryCollapsed)return;
-  _libraryCollapsed=true;
-  const lib=document.getElementById('wallpaperLibrary');
-  if(!lib)return;
-  lib.classList.remove('wl-horizontal');
-  lib.classList.add('wl-vertical');
 }
 
 // ── Mobile library render ─────────────────────────────────────
@@ -2044,7 +2026,6 @@ function loadFromFile(file,slot){
       off.getContext('2d').drawImage(img,0,0);
       const data=off.getContext('2d').getImageData(0,0,off.width,off.height);
       if(slot==='A')S.imgA=data;else S.imgB=data;
-      collapseLibrary();
       const imgType=classifyImageType(data);
       track('image_upload',{slot,img_type:imgType});
       updateBottomThumb(slot,img);
@@ -2349,7 +2330,12 @@ function renderHistory(){
 }
 
 function loadFromHistory(idx){
-  const entry=S.history[idx];if(!entry||!entry.outData)return;
+  const entry=S.history[idx];
+  if(!entry)return;
+  if(!entry.outData){
+    setStatus('this blend is from a previous session — output not available, re-upload images to blend again');
+    return;
+  }
   S.activeHistoryIdx=idx;S.outData=entry.outData;S.w=entry.w;S.h=entry.h;
   const c=document.getElementById('canvasOut');
   if(c){c.width=entry.w;c.height=entry.h;c.getContext('2d').putImageData(entry.outData,0,0);c.style.display='block';}
@@ -2574,11 +2560,13 @@ async function shareOutput(){
           <div class="loading-text" id="mobLoadingText">blending…</div>
           <div class="progress-bar-wrap"><div class="progress-bar" id="mobProgressBar"></div></div>
         </div>
-        <div class="mob-download-actions">
-          <button class="mob-dl-btn" onclick="mobDownload()">⬇ Save</button>
-          <button class="mob-sh-btn" onclick="mobShare()">↗ Share</button>
-        </div>
       </div>
+    </div>
+
+    <!-- Save/Share — always visible above Image B after blend -->
+    <div class="mob-output-actions" id="mobOutputActions">
+      <button class="mob-dl-btn" onclick="mobDownload()">⬇ Save</button>
+      <button class="mob-sh-btn" onclick="mobShare()">↗ Share</button>
     </div>
 
     <!-- Upload boxes (shown after CREATE tap) -->
@@ -2960,15 +2948,14 @@ function mobCompose(){
         MOB.outData = out.getContext('2d').getImageData(0,0,procW,procH);
         out.style.display='block';
         card.classList.add('has-output');
-        // update history badge
+        // Show Save/Share bar above input panels
+        document.getElementById('mobOutputActions')?.classList.add('visible');
         mobAddHistory(mode);
       }
       if(loading) loading.classList.remove('active');
       MOB.busy=false; MOB.worker=null;
       mobUpdateBlendBtn();
-      const stat = document.getElementById('mobStatusMsg');
-      if(stat) stat.textContent = 'blend ready · '+mode+' · '+procW+'×'+procH;
-      if(placeholder) placeholder.style.display='flex';
+      // Keep placeholder hidden — output canvas is visible, status not needed
     }
   };
   MOB.worker.onerror=err=>{
@@ -2996,6 +2983,7 @@ function mobDownload(){
     a.href=url; a.download='maepixel_blend.png'; a.click();
     URL.revokeObjectURL(url);
   },'image/png');
+  track('export',{source:'mobile'});
 }
 
 function mobShare(){
@@ -3007,7 +2995,10 @@ function mobShare(){
     const file=new File([blob],'maepixel.png',{type:'image/png'});
     if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file],title:'MaePixel blend'});
-    } else { mobDownload(); }
+      track('share',{method:'native_file',source:'mobile'});
+    } else {
+      mobDownload();
+    }
   },'image/png');
 }
 
@@ -3021,25 +3012,100 @@ function mobAddHistory(mode){
     const src=document.getElementById('mobCanvasOut');
     if(src) c.getContext('2d').drawImage(src,0,0,48,48);
   }
+  const thumbSrc = c.toDataURL('image/jpeg',0.7);
+  const entry = {
+    thumb: thumbSrc,
+    mode,
+    w: MOB.w, h: MOB.h,
+    time: new Date().toLocaleTimeString(),
+    outData: MOB.outData  // kept in memory for current session
+  };
+
+  // Prepend to DOM
+  list.querySelectorAll('.mob-history-empty').forEach(e=>e.remove());
   const item = document.createElement('div');
   item.className='mob-history-item';
-  item.innerHTML=`<img class="mob-history-thumb" src="${c.toDataURL()}">
+  item.innerHTML=`
+    <img class="mob-history-thumb" src="${thumbSrc}">
     <div class="mob-history-info">
       <strong>${mode}</strong><br>
-      ${MOB.w}×${MOB.h} · ${new Date().toLocaleTimeString()}
+      ${MOB.w}×${MOB.h} · ${entry.time}
     </div>`;
-  // remove placeholder
-  list.querySelectorAll('[style*="no blend"]').forEach(e=>e.remove());
-  const placeholder = list.querySelector('div[style]');
-  if(placeholder && placeholder.textContent.includes('no blend')) placeholder.remove();
+  // Click to restore output
+  item.onclick=()=>mobLoadFromHistory(entry);
   list.prepend(item);
-  // update badge
+
+  // Update badge
   const badge = document.getElementById('mobHistBadge');
   if(badge){
     const count = list.querySelectorAll('.mob-history-item').length;
     badge.textContent = count;
     badge.classList.toggle('show', count>0);
   }
+
+  // Save to localStorage (thumbnails only — outData too large)
+  mobSaveHistoryToStorage();
+}
+
+function mobSaveHistoryToStorage(){
+  try{
+    const list=document.getElementById('mobHistoryList');
+    if(!list)return;
+    const items=[...list.querySelectorAll('.mob-history-item')].slice(0,10).map(el=>({
+      thumb: el.querySelector('img')?.src||'',
+      info:  el.querySelector('.mob-history-info')?.innerHTML||''
+    }));
+    localStorage.setItem('mob_history',JSON.stringify(items));
+  }catch(e){}
+}
+
+function mobLoadHistoryFromStorage(){
+  try{
+    const raw=localStorage.getItem('mob_history');
+    if(!raw)return;
+    const items=JSON.parse(raw);
+    const list=document.getElementById('mobHistoryList');
+    if(!list||!items.length)return;
+    list.querySelectorAll('.mob-history-empty').forEach(e=>e.remove());
+    items.forEach(entry=>{
+      const item=document.createElement('div');
+      item.className='mob-history-item';
+      item.innerHTML=`
+        <img class="mob-history-thumb" src="${entry.thumb}">
+        <div class="mob-history-info">${entry.info}</div>`;
+      // No outData from storage — show message on click
+      item.onclick=()=>{
+        const stat=document.getElementById('mobStatusMsg');
+        if(stat)stat.textContent='previous session — re-upload images to blend again';
+      };
+      list.appendChild(item);
+    });
+    const badge=document.getElementById('mobHistBadge');
+    if(badge){
+      badge.textContent=items.length;
+      badge.classList.toggle('show',items.length>0);
+    }
+  }catch(e){}
+}
+
+function mobLoadFromHistory(entry){
+  if(!entry.outData){
+    const stat=document.getElementById('mobStatusMsg');
+    if(stat)stat.textContent='previous session — re-upload images to blend again';
+    return;
+  }
+  // Restore output canvas
+  MOB.outData=entry.outData; MOB.w=entry.w; MOB.h=entry.h;
+  const out=document.getElementById('mobCanvasOut');
+  const card=document.getElementById('mobOutputCard');
+  if(out&&card){
+    out.width=entry.w; out.height=entry.h;
+    out.getContext('2d').putImageData(entry.outData,0,0);
+    out.style.display='block';
+    card.classList.add('has-output');
+  }
+  document.getElementById('mobileUserLayer')?.classList.add('visible');
+  mobClosePanel();
 }
 
 // ── Sync controls to desktop ─────────────────────────────────
@@ -3070,12 +3136,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const f=e.target.files[0]; if(f) mobLoadFile(f,'B'); e.target.value='';
   });
 
-  // hide history placeholder on first use
-  const hl = document.getElementById('mobHistoryList');
-  if(hl){
-    const first = hl.firstElementChild;
-    if(first) first.setAttribute('data-placeholder','1');
-  }
+  // Load mobile history from storage
+  mobLoadHistoryFromStorage();
 });
 </script>
 
