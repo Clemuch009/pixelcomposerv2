@@ -886,8 +886,21 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 
 /* Hide desktop UI on mobile */
 @media (max-width:767px) {
+  /* Hide all desktop UI */
   .topbar, .layout, .statusbar, .bottom-bar, #wallpaperLibrary { display:none!important; }
   #mobileApp { display:flex!important; }
+  /* Hide desktop history elements on mobile */
+  #historyList, #historyEmpty, #historyCount,
+  #accordionHistory, #bodyHistory { display:none!important; }
+}
+
+@media (min-width:768px) {
+  /* Hide all mobile UI on desktop */
+  #mobileApp { display:none!important; }
+  #mobLibrary { display:none!important; }
+  /* Hide mobile history elements on desktop */
+  #mobHistoryPanel, #mobHistoryList,
+  #mobHistBadge { display:none!important; }
 }
 
 /* ── Mobile wallpaper library ─────────────────────────────── */
