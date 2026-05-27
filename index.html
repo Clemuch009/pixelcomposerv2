@@ -1699,8 +1699,10 @@ async function _flushQueue(){
     const payload=JSON.stringify(_queue[0]);
     let sent=false;
     if(navigator.sendBeacon){
-      try{sent=navigator.sendBeacon(WORKER_URL+'/track',new Blob([payload],{type:'application/json'}));}
-      catch(e){sent=false;}
+      try{
+        // text/plain avoids CORS preflight entirely — no credentials issue
+        sent=navigator.sendBeacon(WORKER_URL+'/track', payload);
+      }catch(e){sent=false;}
     }
     if(!sent){
       try{
