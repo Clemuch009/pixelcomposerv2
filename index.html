@@ -484,7 +484,96 @@ input[type=range]{width:100%;accent-color:var(--accent2);cursor:pointer;}
 .fb-submit:disabled{opacity:0.4;cursor:not-allowed;}
 .fb-thanks{font-size:12px;color:#86efac;text-align:center;display:none;}
 
-/* ══ ANIMATIONS ══════════════════════════════════════════════ */
+/* ══ WALLPAPER LIBRARY SECTION ═══════════════════════════════ */
+#wallpaperLibrary{
+  padding:20px;border-top:1px solid var(--border);
+  background:rgba(6,6,16,0.6);backdrop-filter:var(--glass);
+  flex-shrink:0;
+}
+.wl-header{
+  display:flex;align-items:baseline;gap:10px;margin-bottom:16px;
+}
+.wl-title{
+  font-size:13px;font-weight:700;color:var(--text);letter-spacing:1px;
+}
+.wl-sub{
+  font-size:10px;color:var(--muted);
+}
+.wl-section-label{
+  font-size:9px;color:var(--accent2);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:8px;margin-top:14px;
+  display:flex;align-items:center;gap:6px;
+}
+.wl-section-label::before{content:'';display:block;width:20px;height:1px;background:var(--accent2);opacity:0.5;}
+
+/* Preset pair cards */
+.wl-presets{display:flex;gap:12px;flex-wrap:wrap;}
+.wl-preset-card{
+  background:var(--card);backdrop-filter:var(--glass);
+  border:1px solid var(--border);border-radius:12px;
+  padding:10px;cursor:pointer;transition:all 0.2s;
+  display:flex;flex-direction:column;gap:8px;
+  flex:0 0 auto;
+}
+.wl-preset-card:hover{
+  border-color:rgba(124,58,237,0.6);
+  box-shadow:0 0 20px rgba(124,58,237,0.15);
+  transform:translateY(-2px);
+}
+.wl-preset-pair{display:flex;align-items:center;gap:6px;}
+.wl-preset-img{
+  width:72px;height:48px;object-fit:cover;
+  border-radius:6px;border:1px solid var(--border);
+  flex-shrink:0;
+}
+.wl-preset-output{
+  width:88px;height:58px;
+  border-color:rgba(124,58,237,0.4);
+  box-shadow:0 0 10px rgba(124,58,237,0.2);
+}
+.wl-preset-op{font-size:14px;color:var(--dim);flex-shrink:0;}
+.wl-preset-op.eq{color:var(--accent2);}
+.wl-preset-label{font-size:10px;color:var(--muted);text-align:center;letter-spacing:0.5px;}
+.wl-preset-btn{
+  font-size:10px;font-weight:700;letter-spacing:1px;
+  background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(255,85,51,0.2));
+  border:1px solid rgba(124,58,237,0.4);color:var(--text);
+  padding:5px 10px;border-radius:8px;cursor:pointer;
+  font-family:var(--font);transition:all 0.15s;width:100%;
+}
+.wl-preset-btn:hover{background:linear-gradient(135deg,rgba(124,58,237,0.5),rgba(255,85,51,0.3));}
+
+/* Library grid */
+.wl-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+  gap:8px;
+}
+.wl-grid-img{
+  width:100%;aspect-ratio:1;object-fit:cover;
+  border-radius:8px;border:2px solid transparent;
+  cursor:pointer;transition:all 0.15s;display:block;
+}
+.wl-grid-img:hover{
+  border-color:var(--accent2);
+  transform:scale(1.05);
+  box-shadow:0 4px 16px rgba(0,0,0,0.5);
+}
+.wl-grid-img.slot-a{border-color:var(--accent2);}
+.wl-grid-img.slot-b{border-color:var(--accent);}
+.wl-slot-indicator{
+  font-size:9px;color:var(--accent2);letter-spacing:1px;
+  margin-top:8px;height:14px;transition:all 0.3s;
+}
+
+/* Loaded pulse */
+@keyframes slotPulse{
+  0%{box-shadow:0 0 0 0 rgba(124,58,237,0.6);}
+  70%{box-shadow:0 0 0 8px rgba(124,58,237,0);}
+  100%{box-shadow:0 0 0 0 rgba(124,58,237,0);}
+}
+.wl-grid-img.just-loaded{animation:slotPulse 0.6s ease;}
+
+
 
 /* ── Share button ─────────────────────────────────────────── */
 .share-btn{
@@ -1354,6 +1443,27 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
   </div>
 </div>
 
+<!-- WALLPAPER LIBRARY — below fold, does not modify workspace above -->
+<div id="wallpaperLibrary" style="display:none;">
+  <div class="wl-header">
+    <span class="wl-title">Need wallpapers to try?</span>
+    <span class="wl-sub">Pick a pair instantly or experiment below</span>
+  </div>
+
+  <!-- Quick Experiments — preset pairs -->
+  <div id="wlPresetsWrap" style="display:none;">
+    <div class="wl-section-label">Quick Experiments — click to load instantly</div>
+    <div class="wl-presets" id="wlPresets"></div>
+  </div>
+
+  <!-- Wallpaper Library — individual images -->
+  <div id="wlGridWrap" style="display:none;">
+    <div class="wl-section-label">Wallpaper Library — click to fill a slot</div>
+    <div class="wl-slot-indicator" id="wlSlotIndicator"></div>
+    <div class="wl-grid" id="wlGrid"></div>
+  </div>
+</div>
+
 <!-- BOTTOM BAR — inputs + blend button -->
 <div class="bottom-bar">
   <!-- Upload A zone -->
@@ -1601,17 +1711,118 @@ async function loadShowcase() {
     const res=await fetch(WORKER_URL+'/showcase');
     const data=await res.json();
     if(!data.ok)return;
-    const heroItems=data.items.filter(i=>i.type==='hero');
+
+    const heroItems   = data.items.filter(i=>i.type==='hero');
+    const samplesA    = data.items.filter(i=>i.type==='sample_a');
+    const samplesB    = data.items.filter(i=>i.type==='sample_b');
+    const presets     = data.items.filter(i=>i.type==='preset');
+    const library     = data.items.filter(i=>i.type==='library');
+
     if(heroItems.length>0)renderHero(heroItems);
     else{const h=document.getElementById('heroSection');if(h)h.style.display='none';}
-    const samplesA=data.items.filter(i=>i.type==='sample_a');
-    const samplesB=data.items.filter(i=>i.type==='sample_b');
+
     if(samplesA.length>0||samplesB.length>0)renderSamples(samplesA,samplesB);
     else{const s=document.getElementById('samplesBar');if(s)s.style.display='none';}
+
+    // New: preset pairs + library grid
+    let showLibrary=false;
+    if(presets.length>0){renderPresets(presets);showLibrary=true;}
+    if(library.length>0){renderLibrary(library);showLibrary=true;}
+    if(showLibrary)document.getElementById('wallpaperLibrary').style.display='block';
+
   }catch(e){
     const h=document.getElementById('heroSection');if(h)h.style.display='none';
     const s=document.getElementById('samplesBar');if(s)s.style.display='none';
   }
+}
+
+// ── Render preset pairs ───────────────────────────────────────
+function renderPresets(items){
+  const wrap=document.getElementById('wlPresetsWrap');
+  const grid=document.getElementById('wlPresets');
+  if(!wrap||!grid)return;
+  grid.innerHTML='';
+  items.slice(0,6).forEach(item=>{
+    const card=document.createElement('div');
+    card.className='wl-preset-card';
+    card.innerHTML=`
+      <div class="wl-preset-pair">
+        <img src="${item.img_a_url}" class="wl-preset-img" alt="A"
+          onerror="this.closest('.wl-preset-card').remove()">
+        <span class="wl-preset-op">+</span>
+        <img src="${item.img_b_url}" class="wl-preset-img" alt="B"
+          onerror="this.closest('.wl-preset-card').remove()">
+        ${item.output_url?`<span class="wl-preset-op eq">=</span>
+        <img src="${item.output_url}" class="wl-preset-img wl-preset-output" alt="output"
+          onerror="this.style.display='none'">`:'' }
+      </div>
+      ${item.label?`<div class="wl-preset-label">${item.label}</div>`:''}
+      <button class="wl-preset-btn">▶ Try this pair</button>
+    `;
+    card.querySelector('.wl-preset-btn').onclick=()=>loadPresetPair(item);
+    grid.appendChild(card);
+  });
+  wrap.style.display='block';
+}
+
+// ── Render library grid ───────────────────────────────────────
+function renderLibrary(items){
+  const wrap=document.getElementById('wlGridWrap');
+  const grid=document.getElementById('wlGrid');
+  if(!wrap||!grid)return;
+  grid.innerHTML='';
+  items.slice(0,12).forEach(item=>{
+    const img=document.createElement('img');
+    img.src=item.img_url;
+    img.className='wl-grid-img';
+    img.alt=item.label||'wallpaper';
+    img.title=(item.label||'wallpaper')+' — click to load';
+    img.onerror=()=>img.remove();
+    img.onclick=()=>loadLibraryImage(item.img_url, img);
+    grid.appendChild(img);
+  });
+  wrap.style.display='block';
+}
+
+// ── Load preset pair — loads both A and B then scrolls up ─────
+function loadPresetPair(item){
+  loadSampleImage(item.img_a_url,'A');
+  loadSampleImage(item.img_b_url,'B');
+  track('preset_loaded',{label:item.label||'unknown'});
+  // Smooth partial scroll up — workspace visible without full jump
+  setTimeout(()=>{
+    const target=document.getElementById('inputCards')||document.getElementById('outputCard');
+    if(target)target.scrollIntoView({behavior:'smooth',block:'center'});
+  },300);
+}
+
+// ── Load library image — smart slot fill ──────────────────────
+// C: fill empty slot first, replace A if both full
+function loadLibraryImage(url, imgEl){
+  // Determine slot: fill A if empty, B if A full, replace A if both full
+  let slot;
+  if(!S.imgA)      slot='A';
+  else if(!S.imgB) slot='B';
+  else             slot='A';
+
+  // Update grid highlight
+  document.querySelectorAll('.wl-grid-img').forEach(el=>{
+    el.classList.remove('slot-a','slot-b','just-loaded');
+  });
+  imgEl.classList.add(slot==='A'?'slot-a':'slot-b','just-loaded');
+
+  // Update slot indicator
+  const ind=document.getElementById('wlSlotIndicator');
+  if(ind)ind.textContent=`✓ Loaded into Image ${slot}`;
+
+  loadSampleImage(url, slot);
+  track('library_image_loaded',{slot,url:url.slice(0,80)});
+
+  // Smooth partial scroll up after short delay
+  setTimeout(()=>{
+    const target=document.getElementById('dropA');
+    if(target)target.scrollIntoView({behavior:'smooth',block:'center'});
+  },400);
 }
 
 function renderHero(items){
