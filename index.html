@@ -886,28 +886,15 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 
 /* Hide desktop UI on mobile */
 @media (max-width:767px) {
-  /* Hide all desktop UI */
   .topbar, .layout, .statusbar, .bottom-bar, #wallpaperLibrary { display:none!important; }
   #mobileApp { display:flex!important; }
-  /* Hide desktop history elements on mobile */
-  #historyList, #historyEmpty, #historyCount,
-  #accordionHistory, #bodyHistory { display:none!important; }
-}
-
-@media (min-width:768px) {
-  /* Hide all mobile UI on desktop */
-  #mobileApp { display:none!important; }
-  #mobLibrary { display:none!important; }
-  /* Hide mobile history elements on desktop */
-  #mobHistoryPanel, #mobHistoryList,
-  #mobHistBadge { display:none!important; }
 }
 
 /* ── Mobile wallpaper library ─────────────────────────────── */
 #mobLibrary{
   flex-shrink:0;border-top:1px solid var(--border);
   background:rgba(6,6,16,0.8);padding:10px 12px;
-  max-height:35vh;overflow-y:auto;overscroll-behavior:contain;
+  max-height:200px;overflow-y:auto;
 }
 #mobLibrary.mob-lib-collapsed{max-height:0;overflow:hidden;padding:0;}
 .mob-lib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -918,19 +905,20 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
   text-transform:uppercase;margin-bottom:6px;
 }
 .mob-lib-presets{
-  display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;
+  display:flex;flex-direction:row;flex-wrap:nowrap;
+  gap:8px;overflow-x:auto;padding-bottom:4px;
   scrollbar-width:none;
 }
 .mob-lib-presets::-webkit-scrollbar{display:none;}
 .mob-lib-preset{
   flex-shrink:0;background:var(--card);border:1px solid var(--border);
   border-radius:8px;padding:6px;cursor:pointer;
-  display:flex;flex-direction:column;gap:5px;min-width:120px;
+  display:flex;flex-direction:column;gap:5px;width:110px;
 }
-.mob-lib-preset-pair{display:flex;align-items:center;gap:4px;}
-.mob-lib-preset img{width:44px;height:30px;object-fit:cover;border-radius:4px;flex-shrink:0;}
-.mob-lib-preset-op{font-size:11px;color:var(--dim);}
-.mob-lib-preset-label{font-size:9px;color:var(--muted);text-align:center;}
+.mob-lib-preset-pair{display:flex;align-items:center;gap:3px;}
+.mob-lib-preset img{width:38px;height:26px;object-fit:cover;border-radius:4px;flex-shrink:0;}
+.mob-lib-preset-op{font-size:10px;color:var(--dim);flex-shrink:0;}
+.mob-lib-preset-label{font-size:9px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .mob-lib-preset-btn{
   font-size:9px;font-weight:700;
   background:rgba(124,58,237,0.25);border:1px solid rgba(124,58,237,0.4);
@@ -1274,8 +1262,6 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 }
 .mob-panel-body {
   padding:16px; display:flex; flex-direction:column; gap:12px;
-  flex:1; min-height:0; overflow-y:auto;
-  overscroll-behavior:contain;
 }
 .mob-sec-label {
   font-size:10px; color:rgba(255,255,255,0.75);
@@ -1825,7 +1811,7 @@ async function loadShowcase() {
     if(library.length>0){renderLibrary(library);showLibrary=true;}
     if(showLibrary){
       const lib=document.getElementById('wallpaperLibrary');
-      if(lib&&window.innerWidth>767){lib.classList.add('wl-horizontal');lib.style.display='block';}
+      if(lib){lib.classList.add('wl-horizontal');lib.style.display='block';}
     }
     // Mobile library
     if(presets.length>0||library.length>0) renderMobLibrary(presets,library);
@@ -2055,9 +2041,8 @@ function loadFromFile(file,slot){
     const img=new Image();
     img.onload=()=>{
       const off=document.createElement('canvas');off.width=img.naturalWidth;off.height=img.naturalHeight;
-      const offCtx=off.getContext('2d',{willReadFrequently:true});
-      offCtx.drawImage(img,0,0);
-      const data=offCtx.getImageData(0,0,off.width,off.height);
+      off.getContext('2d').drawImage(img,0,0);
+      const data=off.getContext('2d').getImageData(0,0,off.width,off.height);
       if(slot==='A')S.imgA=data;else S.imgB=data;
       collapseLibrary();
       const imgType=classifyImageType(data);
@@ -2239,7 +2224,7 @@ function normalise(imgData,tw,th){
     tctx.drawImage(cur,0,0,nw,nh);cur=tmp;cw=nw;ch=nh;
   }
   const dst=document.createElement('canvas');dst.width=tw;dst.height=th;
-  const dctx=dst.getContext('2d',{willReadFrequently:true});dctx.imageSmoothingEnabled=true;dctx.imageSmoothingQuality='high';
+  const dctx=dst.getContext('2d');dctx.imageSmoothingEnabled=true;dctx.imageSmoothingQuality='high';
   dctx.drawImage(cur,0,0,tw,th);
   const id=dctx.getImageData(0,0,tw,th);
   return new Uint8ClampedArray(id.data);
@@ -2733,7 +2718,7 @@ async function shareOutput(){
     <button class="mob-panel-close" onclick="mobClosePanel()">✕</button>
   </div>
   <div class="mob-panel-body">
-    <div id="mobHistoryList" style="display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow-y:auto;overscroll-behavior:contain;">
+    <div id="mobHistoryList" style="display:flex;flex-direction:column;gap:8px;">
       <div style="font-size:11px;color:var(--muted);">no blends yet</div>
     </div>
   </div>
