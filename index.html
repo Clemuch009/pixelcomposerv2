@@ -1260,6 +1260,8 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
 }
 .mob-panel-body {
   padding:16px; display:flex; flex-direction:column; gap:12px;
+  flex:1; min-height:0; overflow-y:auto;
+  overscroll-behavior:contain;
 }
 .mob-sec-label {
   font-size:10px; color:rgba(255,255,255,0.75);
@@ -2039,8 +2041,9 @@ function loadFromFile(file,slot){
     const img=new Image();
     img.onload=()=>{
       const off=document.createElement('canvas');off.width=img.naturalWidth;off.height=img.naturalHeight;
-      off.getContext('2d').drawImage(img,0,0);
-      const data=off.getContext('2d').getImageData(0,0,off.width,off.height);
+      const offCtx=off.getContext('2d',{willReadFrequently:true});
+      offCtx.drawImage(img,0,0);
+      const data=offCtx.getImageData(0,0,off.width,off.height);
       if(slot==='A')S.imgA=data;else S.imgB=data;
       collapseLibrary();
       const imgType=classifyImageType(data);
@@ -2222,7 +2225,7 @@ function normalise(imgData,tw,th){
     tctx.drawImage(cur,0,0,nw,nh);cur=tmp;cw=nw;ch=nh;
   }
   const dst=document.createElement('canvas');dst.width=tw;dst.height=th;
-  const dctx=dst.getContext('2d');dctx.imageSmoothingEnabled=true;dctx.imageSmoothingQuality='high';
+  const dctx=dst.getContext('2d',{willReadFrequently:true});dctx.imageSmoothingEnabled=true;dctx.imageSmoothingQuality='high';
   dctx.drawImage(cur,0,0,tw,th);
   const id=dctx.getImageData(0,0,tw,th);
   return new Uint8ClampedArray(id.data);
@@ -2716,7 +2719,7 @@ async function shareOutput(){
     <button class="mob-panel-close" onclick="mobClosePanel()">✕</button>
   </div>
   <div class="mob-panel-body">
-    <div id="mobHistoryList" style="display:flex;flex-direction:column;gap:8px;">
+    <div id="mobHistoryList" style="display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow-y:auto;overscroll-behavior:contain;">
       <div style="font-size:11px;color:var(--muted);">no blends yet</div>
     </div>
   </div>
