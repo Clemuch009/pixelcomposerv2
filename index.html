@@ -1896,7 +1896,7 @@ function loadLibraryImage(url, imgEl){
   let slot;
   if(!S.imgA)      slot='A';
   else if(!S.imgB) slot='B';
-  else             slot='A';
+  else             slot=S._lastLibSlot==='A'?'B':'A';
 
   // Update highlight
   document.querySelectorAll('#panelGrid img').forEach(el=>{
@@ -1911,6 +1911,7 @@ function loadLibraryImage(url, imgEl){
   if(ind)ind.textContent=`✓ Loaded into Image ${slot}`;
 
   loadSampleImage(url, slot);
+  S._lastLibSlot = slot;
   track('library_image_loaded',{slot,url:url.slice(0,80)});
 }
 
@@ -1963,12 +1964,13 @@ function renderMobLibrary(presets,library){
           let slot;
           if(!MOB.imgA)      slot='A';
           else if(!MOB.imgB) slot='B';
-          else               slot='A';
+          else               slot=MOB._lastLibSlot==='A'?'B':'A';
           document.querySelectorAll('.mob-lib-grid-img').forEach(el=>el.classList.remove('slot-a','slot-b'));
           img.classList.add(slot==='A'?'slot-a':'slot-b');
           const ind=document.getElementById('mobLibSlotInd');
           if(ind)ind.textContent=`✓ Image ${slot} loaded`;
           mobLoadSampleImage(item.img_url,slot);
+          MOB._lastLibSlot=slot;
           track('library_image_loaded',{slot,url:item.img_url.slice(0,80),source:'mobile'});
           // Stay visible — user may want to pick another image
         };
