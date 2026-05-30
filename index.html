@@ -1459,13 +1459,11 @@ body.panel-collapsed #panelOpenTabOuter{display:flex;}
           <span class="accordion-arrow" id="arrowTryThese">▴</span>
         </button>
         <div class="accordion-body" id="bodyTryThese" style="display:block;">
-          <div id="panelPresetsWrap" style="display:none;">
-            <div class="sec-label" style="margin-bottom:6px;">QUICK EXPERIMENTS</div>
-            <div id="panelPresets" style="display:flex;flex-direction:column;gap:6px;"></div>
-          </div>
-          <div id="panelGridWrap" style="display:none;margin-top:8px;">
-            <div class="sec-label" style="margin-bottom:6px;">WALLPAPER LIBRARY</div>
+          <div id="panelLibraryWrap" style="display:none;">
             <div id="panelSlotIndicator" style="font-size:9px;color:var(--accent2);min-height:12px;margin-bottom:4px;"></div>
+            <!-- One scrollable list: top 4 presets, gap, then library images -->
+            <div id="panelPresets" style="display:flex;flex-direction:column;gap:6px;"></div>
+            <div id="panelLibraryGap" style="display:none;height:10px;border-top:1px solid var(--border);margin:8px 0 4px;"></div>
             <div id="panelGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"></div>
           </div>
         </div>
@@ -1822,11 +1820,12 @@ async function loadShowcase() {
     if(samplesA.length>0||samplesB.length>0)renderSamples(samplesA,samplesB);
     else{const s=document.getElementById('samplesBar');if(s)s.style.display='none';}
 
-    // Render into panel accordion
+    // Render into panel accordion — one unified list
     let showPanel=false;
     if(presets.length>0){renderPresets(presets);showPanel=true;}
     if(library.length>0){renderLibrary(library);showPanel=true;}
     if(showPanel){
+      document.getElementById('panelLibraryWrap').style.display='block';
       document.getElementById('accordionTryThese').style.display='block';
     }
     // Mobile library
@@ -1840,11 +1839,10 @@ async function loadShowcase() {
 
 // ── Render preset pairs into panel ────────────────────────────
 function renderPresets(items){
-  const wrap=document.getElementById('panelPresetsWrap');
   const grid=document.getElementById('panelPresets');
-  if(!wrap||!grid)return;
+  if(!grid)return;
   grid.innerHTML='';
-  items.slice(0,6).forEach(item=>{
+  items.slice(0,4).forEach(item=>{
     const card=document.createElement('div');
     card.style.cssText='display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color 0.15s;';
     card.onmouseenter=()=>card.style.borderColor='rgba(124,58,237,0.5)';
@@ -1861,16 +1859,14 @@ function renderPresets(items){
     card.querySelector('button').onclick=(e)=>{e.stopPropagation();loadPresetPair(item);};
     grid.appendChild(card);
   });
-  wrap.style.display='block';
 }
 
 // ── Render library grid into panel ────────────────────────────
 function renderLibrary(items){
-  const wrap=document.getElementById('panelGridWrap');
   const grid=document.getElementById('panelGrid');
-  if(!wrap||!grid)return;
+  if(!grid)return;
   grid.innerHTML='';
-  items.slice(0,12).forEach(item=>{
+  items.forEach(item=>{
     const img=document.createElement('img');
     img.src=item.img_url;
     img.style.cssText='width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all 0.15s;display:block;';
@@ -1882,7 +1878,10 @@ function renderLibrary(items){
     img.onclick=()=>loadLibraryImage(item.img_url, img);
     grid.appendChild(img);
   });
-  wrap.style.display='block';
+  // Show gap divider only if presets are also present
+  const gap=document.getElementById('panelLibraryGap');
+  const presets=document.getElementById('panelPresets');
+  if(gap&&presets&&presets.children.length>0) gap.style.display='block';
 }
 
 // ── Load preset pair ──────────────────────────────────────────
@@ -1954,7 +1953,7 @@ function renderMobLibrary(presets,library){
     const grid=document.getElementById('mobLibGrid');
     if(wrap&&grid){
       grid.innerHTML='';
-      library.slice(0,12).forEach(item=>{
+      library.forEach(item=>{
         const img=document.createElement('img');
         img.src=item.img_url;
         img.className='mob-lib-grid-img';
